@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Backend configuration
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:3001")
-BACKEND_WS_URL = os.getenv("BACKEND_WS_URL", "ws://localhost:3001")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://10.98.122.196:3001")
+BACKEND_WS_URL = os.getenv("BACKEND_WS_URL", "ws://10.98.122.19:3001")
 
 # Device configuration
 DEVICE_ID = os.getenv("DEVICE_ID", "")
