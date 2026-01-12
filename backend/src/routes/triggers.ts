@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db';
+import { fireTriggerOnDevice, isDeviceConnected } from '../websocket';
 
 export const triggerRouter = Router();
 
@@ -141,10 +142,25 @@ triggerRouter.post('/:id/fire', async (req, res) => {
   try {
     const trigger = await prisma.trigger.findUnique({
       where: { id: req.params.id },
-      include: { device: true, actions: true },
+      include: { device: true, actions: { orderBy: { order: 'asc' } } },
     });
     if (!trigger) {
       return res.status(404).json({ error: 'Trigger non trouvé' });
+    }
+
+    // Check if device is connected
+    if (!isDeviceConnected(trigger.deviceId)) {
+      return res.status(503).json({ 
+        error: 'Device non connecté',
+        message: `Le device "${trigger.device.name}" n'est pas connecté. Impossible d'exécuter le trigger.`
+      });
+    }
+    
+    // Send command to device via WebSocket
+    const sent = await fireTriggerOnDevice(trigger.deviceId, trigger.id);
+    
+    if (!sent) {
+      return res.status(500).json({ error: 'Erreur lors de l\'envoi de la commande au device' });
     }
     
     // Log the event
@@ -158,8 +174,9 @@ triggerRouter.post('/:id/fire', async (req, res) => {
       },
     });
     
-    res.json({ status: 'fired', trigger });
+    res.json({ status: 'fired', trigger, sent: true });
   } catch (error) {
+    console.error('Erreur fire trigger:', error);
     res.status(500).json({ error: 'Erreur lors du déclenchement' });
   }
 });

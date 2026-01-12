@@ -25,7 +25,8 @@ class RPIClient:
         )
         self.ws_client = WSClient(
             on_config=self._on_config_received,
-            on_config_update=self._on_config_received
+            on_config_update=self._on_config_received,
+            on_execute_trigger=self._on_execute_trigger
         )
         # Connecter l'executor au ws_client pour les notifications
         self.action_executor.ws_client = self.ws_client
@@ -35,8 +36,13 @@ class RPIClient:
         self.trigger_manager.load_config(config)
 
     def _on_trigger_fired(self, trigger_id: str, trigger_name: str):
-        """Callback quand un trigger est déclenché."""
+        """Callback quand un trigger est déclenché localement."""
         self.ws_client.send_trigger_fired(trigger_id, trigger_name)
+
+    def _on_execute_trigger(self, trigger_id: str, trigger_name: str, actions: list):
+        """Callback quand le backend demande d'exécuter un trigger."""
+        print(f"⚡ Exécution du trigger '{trigger_name}' avec {len(actions)} action(s)")
+        self.action_executor.execute_actions(trigger_id, trigger_name, actions)
 
     async def run(self):
         """Démarre le client."""

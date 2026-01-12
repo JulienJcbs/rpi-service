@@ -239,6 +239,49 @@ export function sendConfigUpdate(deviceId: string) {
   }
 }
 
+// Function to fire a trigger on a specific device
+export async function fireTriggerOnDevice(deviceId: string, triggerId: string): Promise<boolean> {
+  const conn = connections.get(deviceId);
+  if (!conn) {
+    console.log(`⚠️ Device ${deviceId} non connecté - impossible d'exécuter le trigger`);
+    return false;
+  }
+
+  // Get trigger with actions
+  const trigger = await prisma.trigger.findUnique({
+    where: { id: triggerId },
+    include: { actions: { orderBy: { order: 'asc' } } },
+  });
+
+  if (!trigger) {
+    console.log(`⚠️ Trigger ${triggerId} non trouvé`);
+    return false;
+  }
+
+  // Send execute command to device
+  const message = {
+    type: 'execute_trigger',
+    triggerId: trigger.id,
+    triggerName: trigger.name,
+    actions: trigger.actions.map((a) => ({
+      id: a.id,
+      name: a.name,
+      type: a.type,
+      config: JSON.parse(a.config),
+      order: a.order,
+    })),
+  };
+
+  conn.ws.send(JSON.stringify(message));
+  console.log(`🎯 Commande execute_trigger envoyée au device ${deviceId}`);
+  return true;
+}
+
+// Check if a device is connected
+export function isDeviceConnected(deviceId: string): boolean {
+  return connections.has(deviceId);
+}
+
 // Function to broadcast to all connected devices
 export function broadcast(message: any) {
   const data = JSON.stringify(message);

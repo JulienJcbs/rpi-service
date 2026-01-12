@@ -14,9 +14,11 @@ class WSClient:
         self,
         on_config: Optional[Callable[[dict], None]] = None,
         on_config_update: Optional[Callable[[dict], None]] = None,
+        on_execute_trigger: Optional[Callable[[str, str, list], None]] = None,
     ):
         self.on_config = on_config
         self.on_config_update = on_config_update
+        self.on_execute_trigger = on_execute_trigger  # (trigger_id, trigger_name, actions)
         self.ws: Optional[websockets.WebSocketClientProtocol] = None
         self._running = False
         self._device_id = DEVICE_ID
@@ -98,6 +100,14 @@ class WSClient:
             print("🔄 Mise à jour de configuration")
             if self.on_config_update:
                 self.on_config_update(message.get("config", {}))
+        
+        elif msg_type == "execute_trigger":
+            trigger_id = message.get("triggerId")
+            trigger_name = message.get("triggerName")
+            actions = message.get("actions", [])
+            print(f"\n🎯 Commande reçue: exécuter trigger '{trigger_name}'")
+            if self.on_execute_trigger:
+                self.on_execute_trigger(trigger_id, trigger_name, actions)
         
         elif msg_type == "pong":
             pass  # Heartbeat acknowledgment
