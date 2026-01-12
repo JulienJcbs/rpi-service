@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  color       String   @default("#6366f1")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  devices     Device[]
+}
+
+model Device {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  hostname    String?
+  ipAddress   String?
+  isOnline    Boolean   @default(false)
+  lastSeen    DateTime?
+  groupId     String?
+  group       Group?    @relation(fields: [groupId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  triggers    Trigger[]
+}
+
+model Trigger {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  type        String   // gpio_input, schedule, api_call
+  config      String   // JSON config (gpio pin, cron expression, etc.)
+  isEnabled   Boolean  @default(true)
+  deviceId    String
+  device      Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  actions     Action[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Action {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // gpio_output, http_request, delay
+  config      String   // JSON config (gpio pin, url, duration, etc.)
+  order       Int      @default(0)
+  triggerId   String
+  trigger     Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EventLog {
+  id         String   @id @default(uuid())
+  deviceId   String
+  triggerId  String?
+  actionId   String?
+  type       String   // trigger_fired, action_executed, device_connected, device_disconnected
+  message    String
+  metadata   String?  // JSON additional data
+  createdAt  DateTime @default(now())
+}
+
