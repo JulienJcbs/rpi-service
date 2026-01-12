@@ -2,10 +2,33 @@
 
 Client Python pour Raspberry Pi - Se connecte au backend et gère les GPIO.
 
-## Installation
+## Installation rapide (sur le Raspberry Pi)
+
+### Option 1: Installation automatique avec service systemd
+
+```bash
+# Cloner le projet sur le RPi
+git clone <your-repo> && cd rpi-service/rpi-client
+
+# Lancer l'installation (crée un service systemd)
+sudo ./install.sh
+```
+
+### Option 2: Créer un exécutable compilé
+
+```bash
+# Sur le Raspberry Pi
+./build.sh
+
+# L'exécutable sera dans dist/rpi-client
+./dist/rpi-client --device-id <YOUR_ID>
+```
+
+### Option 3: Exécution directe avec Python
 
 ```bash
 pip install -r requirements.txt
+python main.py --device-id <YOUR_ID>
 ```
 
 ## Configuration
